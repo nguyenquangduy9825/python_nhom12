@@ -1,14 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# ==========================================
-# MÀN HÌNH 1: ĐĂNG NHẬP (Login Window)
-# ==========================================
 class LoginWindow(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="#f0f4f8") # Màu nền xám nhạt hiện đại
+        self.configure(bg="#f0f4f8") # Màu nền xám 
 
         # Khung chứa nội dung (Căn giữa)
         frame = tk.Frame(self, bg="white", padx=40, pady=40)
