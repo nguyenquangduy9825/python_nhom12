@@ -7,7 +7,7 @@ class LoginWindow(tk.Frame):
         self.controller = controller
         self.configure(bg="#f0f4f8") # Màu nền xám 
 
-        # Khung chứa nội dung (Căn giữa)
+        #(Căn giữa)
         frame = tk.Frame(self, bg="white", padx=40, pady=40)
         frame.place(relx=0.5, rely=0.5, anchor="center")
 
