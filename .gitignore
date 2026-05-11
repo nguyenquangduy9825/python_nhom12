@@ -1,0 +1,17 @@
+# Bỏ qua thư mục chứa file biên dịch của Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Bỏ qua file chứa mật khẩu/cấu hình môi trường
+.env
+
+# Bỏ qua thư mục môi trường ảo 
+venv/
+env/
+
+# Bỏ qua các file cấu hình riêng của VS Code
+.vscode/
+
+# Bỏ qua các file ảnh QR sinh ra tự động trong quá trình chạy app
+my_qr.png
