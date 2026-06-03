@@ -1,5 +1,5 @@
 # bll/flight_service.py
-from dal.flight_dao import FlightDAO
+from dal.flight_repository import FlightDAO
 
 class FlightService:
     def __init__(self):

@@ -26,7 +26,7 @@ class AdminDashboardScreen(QWidget):
     def on_delete_user_click(self):
         target_id_to_delete = 5 # lấy ID từ 1 QTableWidget đang được chọn
         
-        # Gọi xuống Service, truyền ID cần xóa VÀ ID của Admin đang dùng máy (để ngăn xóa tài khoản)
+        # Gọi xuống Service, tham chiếu id cần xóa và id của tài khoản admin đang dùng (để ngăn xóa tài khoản)
         success, message = self.admin_service.delete_user(target_id_to_delete, self.current_user.user_id)
         
         if success:

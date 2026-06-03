@@ -1,23 +1,35 @@
 # bll/hold_service.py
-from dal.seat_repository import SeatRepository
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QThread
+import time
+from config.database import DatabaseConnection
 
-class SeatHoldService:
+class SeatHoldCleanerWorker(QThread):
+    """Tiến trình chạy ngầm dọn dẹp các ghế hết hạn giữ chỗ"""
     def __init__(self):
-        self.seat_repo = SeatRepository()
+        super().__init__()
+        self.is_running = True
 
-    def hold_seat(self, seat_id):
-        return self.seat_repo.hold_seat(seat_id)
+    def run(self):
+        while self.is_running:
+            self.release_expired_holds()
+            time.sleep(60) # Quét mỗi 1 phút
 
-class SeatHoldCleanerWorker:
-    """Chạy nền mỗi 30s để nhả ghế hết hạn"""
-    def __init__(self):
-        self.repo = SeatRepository()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.clean_expired_holds)
-        self.timer.start(30000) # 30s/lần
+    def release_expired_holds(self):
+        conn = DatabaseConnection.get_connection()
+        try:
+            cursor = conn.cursor()
+            # Cập nhật trạng thái vé và nhả ghế khi quá 15 phút
+            cursor.execute("""
+                UPDATE Tickets t
+                JOIN Seats s ON t.seat_id = s.seat_id
+                SET t.status = 'CANCELLED', s.seat_status = 'AVAILABLE', s.hold_expired_at = NULL, s.is_booked = FALSE
+                WHERE t.status = 'HELD' AND s.hold_expired_at IS NOT NULL AND s.hold_expired_at <= NOW()
+            """)
+            conn.commit()
+        except Exception:
+            pass
+        finally:
+            if conn: conn.close()
 
-    def clean_expired_holds(self):
-        released = self.repo.release_expired_holds()
-        if released > 0:
-            print(f"[Hệ thống] Đã tự động nhả {released} ghế hết thời gian giữ chỗ.")
+    def stop(self):
+        self.is_running = False

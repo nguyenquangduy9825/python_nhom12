@@ -1,15 +1,13 @@
 # gui/views/login_view.py
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QLineEdit, QPushButton, QFrame, QMessageBox, QFormLayout)
+                             QLineEdit, QPushButton, QFrame, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer, QDateTime, pyqtSignal
+from PyQt6.QtGui import QCursor, QFont
 from bll.auth_service import AuthService
-from bll.otp_service import OTPService
 
 class LoginScreen(QWidget):
     login_success_signal = pyqtSignal(object) 
-    go_to_register_signal = pyqtSignal()
-    go_to_forgot_pw_signal = pyqtSignal()
-    continue_as_guest_signal = pyqtSignal() # Tín hiệu dành cho Khách vãng lai
+    continue_as_guest_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -18,271 +16,178 @@ class LoginScreen(QWidget):
         self.setup_clock()
 
     def setup_ui(self):
+        self.setStyleSheet("""
+            QWidget { background-color: #0F172A; font-family: 'Segoe UI'; }
+            QFrame#LoginCard { 
+                background-color: #1E293B; 
+                border-radius: 16px; 
+                border: 1px solid #334155; 
+            }
+            QLineEdit { 
+                padding: 14px 16px; 
+                border-radius: 8px; 
+                background-color: #0F172A; 
+                border: 1px solid #475569; 
+                color: white; 
+                font-size: 14px; 
+            }
+            QLineEdit:focus { border: 2px solid #38BDF8; }
+            QPushButton#BtnPrimary { 
+                background-color: #38BDF8; 
+                color: #0F172A; 
+                font-weight: bold; 
+                border-radius: 8px; 
+                padding: 14px; 
+                font-size: 15px; 
+            }
+            QPushButton#BtnPrimary:hover { background-color: #0284C7; color: white; }
+            QPushButton#BtnFace { 
+                background-color: #8B5CF6; 
+                color: white; 
+                font-weight: bold; 
+                border-radius: 8px; 
+                padding: 14px; 
+                font-size: 14px; 
+            }
+            QPushButton#BtnFace:hover { background-color: #7C3AED; }
+            QPushButton#BtnGuest { 
+                background-color: transparent; 
+                border: 2px solid #10B981; 
+                color: #10B981; 
+                border-radius: 8px; 
+                padding: 14px; 
+                font-weight: bold; 
+                font-size: 15px; 
+            }
+            QPushButton#BtnGuest:hover { background-color: #10B981; color: #0F172A; }
+        """)
+
         main_layout = QVBoxLayout(self)
         
-        clock_layout = QHBoxLayout(); clock_layout.addStretch()
+        # Đồng hồ ở góc
+        clock_layout = QHBoxLayout()
+        clock_layout.addStretch()
         self.lbl_clock = QLabel()
         self.lbl_clock.setStyleSheet("font-size: 14px; font-weight: bold; color: #94A3B8; padding: 10px;")
-        clock_layout.addWidget(self.lbl_clock); main_layout.addLayout(clock_layout)
+        clock_layout.addWidget(self.lbl_clock)
+        main_layout.addLayout(clock_layout)
 
-        center_layout = QVBoxLayout(); center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Căn giữa Form
+        center_layout = QVBoxLayout()
+        center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        frame = QFrame()
-        frame.setObjectName("SaaSCard")
-        frame.setFixedWidth(420)
-        form_layout = QVBoxLayout(frame)
-        form_layout.setContentsMargins(32, 32, 32, 32)
-        form_layout.setSpacing(16)
+        card_frame = QFrame()
+        card_frame.setObjectName("LoginCard")
+        card_frame.setFixedSize(420, 520)
+        
+        card_layout = QVBoxLayout(card_frame)
+        card_layout.setContentsMargins(40, 40, 40, 40)
+        card_layout.setSpacing(20)
 
-        lbl_title = QLabel("✈️ AIRLINE SYSTEM")
+        lbl_icon = QLabel("✈️")
+        lbl_icon.setFont(QFont("Arial", 40))
+        lbl_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_icon.setStyleSheet("background: transparent;")
+        card_layout.addWidget(lbl_icon)
+
+        lbl_title = QLabel("HỆ THỐNG QUẢN TRỊ")
+        lbl_title.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        lbl_title.setStyleSheet("color: #F8FAFC; background: transparent; letter-spacing: 2px;")
         lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_title.setStyleSheet("font-size: 24px; font-weight: bold; color: #E2E8F0; margin-bottom: 10px;")
-        
-        self.txt_user = QLineEdit(); self.txt_user.setPlaceholderText("Tên đăng nhập")
-        
-        pass_frame = QFrame()
-        pass_frame.setObjectName("PasswordFrame")
-        pass_layout = QHBoxLayout(pass_frame)
-        pass_layout.setContentsMargins(0, 0, 8, 0)
-        
-        self.txt_pass = QLineEdit(); self.txt_pass.setPlaceholderText("Mật khẩu"); self.txt_pass.setEchoMode(QLineEdit.EchoMode.Password)
-        self.txt_pass.setStyleSheet("border: none; background: transparent;") 
-        
-        self.btn_eye = QPushButton("👁")
-        self.btn_eye.setFixedWidth(30); self.btn_eye.setCheckable(True)
-        self.btn_eye.setStyleSheet("background: transparent; border: none; font-size: 16px; color: #94A3B8;")
-        self.btn_eye.clicked.connect(lambda: self.txt_pass.setEchoMode(QLineEdit.EchoMode.Normal if self.btn_eye.isChecked() else QLineEdit.EchoMode.Password))
-        
-        pass_layout.addWidget(self.txt_pass); pass_layout.addWidget(self.btn_eye)
+        card_layout.addWidget(lbl_title)
+        card_layout.addSpacing(10)
 
-        # CÁC NÚT ĐĂNG NHẬP
-        self.btn_login = QPushButton("🔑 Đăng Nhập (Password)")
-        self.btn_login.setObjectName("BtnPrimary")
-        self.btn_login.clicked.connect(self.handle_login)
+        # Form Đăng nhập nội bộ
+        self.txt_username = QLineEdit()
+        self.txt_username.setPlaceholderText("Tên đăng nhập nội bộ")
+        card_layout.addWidget(self.txt_username)
 
-        self.btn_face_login = QPushButton("📷 Đăng Nhập bằng Face ID")
-        self.btn_face_login.setStyleSheet("background-color: #8B5CF6; color: white; font-weight: bold; padding: 10px; border-radius: 6px;")
-        self.btn_face_login.clicked.connect(self.handle_face_login)
-
-        # NÚT DÀNH CHO KHÁCH VÃNG LAI
-        self.btn_guest = QPushButton("🚶 Đặt Vé Nhanh (Không cần Đăng nhập)")
-        self.btn_guest.setStyleSheet("background-color: #64748B; color: white; font-weight: bold; padding: 10px; border-radius: 6px;")
-        self.btn_guest.clicked.connect(self.continue_as_guest_signal.emit)
-
-        links_layout = QVBoxLayout()
-        self.btn_register = QPushButton("📝 Chưa có tài khoản? Đăng ký ngay")
-        self.btn_register.setObjectName("BtnLink")
-        self.btn_forgot = QPushButton("❓ Quên mật khẩu?")
-        self.btn_forgot.setObjectName("BtnLink")
-        self.btn_forgot.setStyleSheet("color: #EF4444;") 
+        # Khung chứa Mật khẩu + Nút xem
+        password_frame = QFrame()
+        password_layout = QHBoxLayout(password_frame)
+        password_layout.setContentsMargins(0, 0, 8, 0)
         
-        self.btn_register.clicked.connect(self.go_to_register_signal.emit)
-        self.btn_forgot.clicked.connect(self.go_to_forgot_pw_signal.emit)
-
-        links_layout.addWidget(self.btn_forgot); links_layout.addWidget(self.btn_register)
-
-        form_layout.addWidget(lbl_title)
-        form_layout.addWidget(QLabel("Username:")); form_layout.addWidget(self.txt_user)
-        form_layout.addWidget(QLabel("Password:")); form_layout.addWidget(pass_frame)
-        form_layout.addSpacing(10)
+        self.txt_password = QLineEdit()
+        self.txt_password.setPlaceholderText("Mật khẩu")
+        self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.txt_password.setStyleSheet("border: none; background: transparent;")
+        self.txt_password.returnPressed.connect(self.handle_login)
         
-        form_layout.addWidget(self.btn_login)
-        form_layout.addWidget(self.btn_face_login)
-        form_layout.addWidget(self.btn_guest)
+        self.btn_toggle_eye = QPushButton("👁")
+        self.btn_toggle_eye.setFixedWidth(30)
+        self.btn_toggle_eye.setCheckable(True)
+        self.btn_toggle_eye.setStyleSheet("background: transparent; border: none; font-size: 16px; color: #94A3B8;")
+        self.btn_toggle_eye.clicked.connect(self.toggle_password_visibility)
         
-        form_layout.addSpacing(10); form_layout.addLayout(links_layout)
+        password_layout.addWidget(self.txt_password)
+        password_layout.addWidget(self.btn_toggle_eye)
+        
+        # Bọc CSS cho khung password để nó giống QLineEdit
+        password_frame.setStyleSheet("""
+            QFrame { border-radius: 8px; background-color: #0F172A; border: 1px solid #475569; }
+            QFrame:focus-within { border: 2px solid #38BDF8; }
+        """)
+        card_layout.addWidget(password_frame)
 
-        center_layout.addWidget(frame); main_layout.addLayout(center_layout)
+        btn_login = QPushButton("🔑 Đăng Nhập")
+        btn_login.setObjectName("BtnPrimary")
+        btn_login.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        btn_login.clicked.connect(self.handle_login)
+        card_layout.addWidget(btn_login)
+
+        btn_face_id = QPushButton("📷 Face ID Khu vực")
+        btn_face_id.setObjectName("BtnFace")
+        btn_face_id.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        btn_face_id.clicked.connect(self.handle_face_login)
+        card_layout.addWidget(btn_face_id)
+
+        card_layout.addSpacing(10)
+        card_layout.addWidget(QLabel("─── HOẶC ───", styleSheet="color: #475569; background: transparent; font-weight:bold; font-size: 12px;"), alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Nút Đặt vé nhanh cho Khách hàng
+        btn_guest_booking = QPushButton("🚶 ĐẶT VÉ TRỰC TUYẾN NGAY")
+        btn_guest_booking.setObjectName("BtnGuest")
+        btn_guest_booking.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        btn_guest_booking.clicked.connect(self.continue_as_guest_signal.emit)
+        card_layout.addWidget(btn_guest_booking)
+
+        center_layout.addWidget(card_frame)
+        main_layout.addLayout(center_layout)
+
+    def toggle_password_visibility(self):
+        if self.btn_toggle_eye.isChecked():
+            self.txt_password.setEchoMode(QLineEdit.EchoMode.Normal)
+        else:
+            self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
 
     def setup_clock(self):
-        self.timer = QTimer(self); self.timer.timeout.connect(self.update_time); self.timer.start(1000); self.update_time()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_time)
+        self.timer.start(1000)
+        self.update_time()
 
     def update_time(self):
         self.lbl_clock.setText(QDateTime.currentDateTime().toString("dd/MM/yyyy  hh:mm:ss"))
 
     def handle_login(self):
-        user_obj, message = self.auth_service.login(self.txt_user.text().strip(), self.txt_pass.text().strip())
+        username = self.txt_username.text().strip()
+        password = self.txt_password.text().strip()
+        
+        if not username or not password:
+            return QMessageBox.warning(self, "Lỗi", "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!")
+            
+        user_obj, message = self.auth_service.login(username, password)
         if user_obj:
-            role = user_obj.get('role', 'USER') if isinstance(user_obj, dict) else getattr(user_obj, 'role', 'USER')
-            role_vn = {"ADMIN": "Quản trị viên", "STAFF": "Nhân viên", "USER": "Thành viên"}
-            role_display = role_vn.get(role, 'Người dùng')
-            username = user_obj.get('username') if isinstance(user_obj, dict) else getattr(user_obj, 'username')
-            
-            QMessageBox.information(self, "Đăng nhập thành công", f"Xin chào {username}!\nChức vụ: {role_display}")
-            
-            self.txt_pass.clear() 
+            self.txt_password.clear() 
             self.login_success_signal.emit(user_obj) 
         else:
-            QMessageBox.warning(self, "Lỗi Đăng Nhập", message)
+            QMessageBox.critical(self, "Đăng nhập thất bại", message)
 
     def handle_face_login(self):
         try:
             from gui.faceid.face_login_dialog import FaceLoginDialog
             dialog = FaceLoginDialog(self)
             if dialog.exec() == 1: 
-                user_obj = dialog.logged_in_user
-                role = user_obj.get('role', 'USER') if isinstance(user_obj, dict) else getattr(user_obj, 'role', 'USER')
-                role_vn = {"ADMIN": "Quản trị viên", "STAFF": "Nhân viên", "USER": "Thành viên"}
-                username = user_obj.get('username') if isinstance(user_obj, dict) else getattr(user_obj, 'username')
-                
-                QMessageBox.information(self, "Thành công", f"Face ID xác thực thành công!\nXin chào {username} ({role_vn.get(role, 'Khách')})")
-                self.login_success_signal.emit(user_obj)
+                self.login_success_signal.emit(dialog.logged_in_user)
         except ImportError as e:
-            QMessageBox.warning(self, "Chưa cài đặt", f"Hệ thống thiếu thư viện AI: {e}\nVui lòng chạy: pip install opencv-python face-recognition numpy")
-
-class RegisterScreen(QWidget):
-    back_to_login_signal = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        self.auth_service = AuthService()
-        self.setup_ui()
-
-    def setup_ui(self):
-        main_layout = QVBoxLayout(self)
-        top_layout = QHBoxLayout()
-        self.btn_back = QPushButton("⬅ Quay lại Login")
-        self.btn_back.setObjectName("BtnLink")
-        self.btn_back.clicked.connect(self.back_to_login_signal.emit)
-        top_layout.addWidget(self.btn_back); top_layout.addStretch(); main_layout.addLayout(top_layout)
-
-        center_layout = QVBoxLayout(); center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        frame = QFrame()
-        frame.setObjectName("SaaSCard")
-        frame.setFixedWidth(420)
-        form_layout = QFormLayout(frame)
-        form_layout.setContentsMargins(32, 32, 32, 32)
-        form_layout.setSpacing(16)
-
-        lbl_title = QLabel("📝 ĐĂNG KÝ TÀI KHOẢN")
-        lbl_title.setStyleSheet("font-size: 20px; font-weight: bold; color: #10B981; margin-bottom: 15px;")
-        
-        self.txt_user = QLineEdit()
-        
-        pass_frame = QFrame()
-        pass_frame.setObjectName("PasswordFrame")
-        pass_layout = QHBoxLayout(pass_frame)
-        pass_layout.setContentsMargins(0, 0, 8, 0)
-        self.txt_pass = QLineEdit(); self.txt_pass.setEchoMode(QLineEdit.EchoMode.Password)
-        self.txt_pass.setStyleSheet("border: none; background: transparent;")
-        self.btn_eye_reg = QPushButton("👁"); self.btn_eye_reg.setFixedWidth(30); self.btn_eye_reg.setCheckable(True)
-        self.btn_eye_reg.setStyleSheet("background: transparent; border: none; font-size: 16px; color: #94A3B8;")
-        self.btn_eye_reg.clicked.connect(lambda: self.txt_pass.setEchoMode(QLineEdit.EchoMode.Normal if self.btn_eye_reg.isChecked() else QLineEdit.EchoMode.Password))
-        pass_layout.addWidget(self.txt_pass); pass_layout.addWidget(self.btn_eye_reg)
-
-        self.txt_phone = QLineEdit(); self.txt_cccd = QLineEdit()
-
-        self.btn_register = QPushButton("✅ Xác nhận Đăng Ký")
-        self.btn_register.setObjectName("BtnSuccess")
-        self.btn_register.clicked.connect(self.handle_register)
-
-        form_layout.addRow(lbl_title)
-        form_layout.addRow("Username (*):", self.txt_user)
-        form_layout.addRow("Password (*):", pass_frame)
-        form_layout.addRow("Số Điện Thoại:", self.txt_phone)
-        form_layout.addRow("CCCD:", self.txt_cccd)
-        form_layout.addRow(self.btn_register)
-
-        center_layout.addWidget(frame); main_layout.addLayout(center_layout); main_layout.addStretch()
-
-    def handle_register(self):
-        u, p = self.txt_user.text().strip(), self.txt_pass.text().strip()
-        phone, cccd = self.txt_phone.text().strip(), self.txt_cccd.text().strip()
-
-        success, message = self.auth_service.register(u, p, phone, cccd)
-        if success:
-            QMessageBox.information(self, "Thành công", message)
-            self.txt_user.clear(); self.txt_pass.clear(); self.txt_phone.clear(); self.txt_cccd.clear()
-            self.back_to_login_signal.emit()
-        else:
-            QMessageBox.warning(self, "Lỗi Đăng Ký", message)
-
-
-class ForgotPasswordScreen(QWidget):
-    back_to_login_signal = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        self.otp_service = OTPService()
-        self.setup_ui()
-
-    def setup_ui(self):
-        main_layout = QVBoxLayout(self)
-        top_layout = QHBoxLayout()
-        self.btn_back = QPushButton("⬅ Quay lại Login")
-        self.btn_back.setObjectName("BtnLink")
-        self.btn_back.clicked.connect(self.back_to_login_signal.emit)
-        top_layout.addWidget(self.btn_back); top_layout.addStretch(); main_layout.addLayout(top_layout)
-
-        center_layout = QVBoxLayout(); center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        frame = QFrame()
-        frame.setObjectName("SaaSCard")
-        frame.setFixedWidth(420)
-        form_layout = QVBoxLayout(frame)
-        form_layout.setContentsMargins(32, 32, 32, 32)
-        form_layout.setSpacing(16)
-
-        lbl_title = QLabel("🔒 QUÊN MẬT KHẨU")
-        lbl_title.setStyleSheet("font-size: 20px; font-weight: bold; color: #EF4444; margin-bottom: 15px;")
-        
-        step1_layout = QHBoxLayout()
-        self.txt_identifier = QLineEdit(); self.txt_identifier.setPlaceholderText("Nhập Username của bạn")
-        self.btn_req_otp = QPushButton("Gửi OTP")
-        self.btn_req_otp.setObjectName("BtnPrimary")
-        self.btn_req_otp.clicked.connect(self.handle_request_otp)
-        step1_layout.addWidget(self.txt_identifier); step1_layout.addWidget(self.btn_req_otp)
-
-        self.txt_otp = QLineEdit(); self.txt_otp.setPlaceholderText("Nhập mã OTP 6 số"); self.txt_otp.setEnabled(False)
-        
-        pass_frame = QFrame()
-        pass_frame.setObjectName("PasswordFrame")
-        pass_layout = QHBoxLayout(pass_frame)
-        pass_layout.setContentsMargins(0, 0, 8, 0)
-        self.txt_new_pass = QLineEdit(); self.txt_new_pass.setPlaceholderText("Mật khẩu mới"); self.txt_new_pass.setEchoMode(QLineEdit.EchoMode.Password); self.txt_new_pass.setEnabled(False)
-        self.txt_new_pass.setStyleSheet("border: none; background: transparent;")
-        
-        self.btn_eye_forgot = QPushButton("👁"); self.btn_eye_forgot.setFixedWidth(30); self.btn_eye_forgot.setCheckable(True); self.btn_eye_forgot.setEnabled(False)
-        self.btn_eye_forgot.setStyleSheet("background: transparent; border: none; font-size: 16px; color: #94A3B8;")
-        self.btn_eye_forgot.clicked.connect(lambda: self.txt_new_pass.setEchoMode(QLineEdit.EchoMode.Normal if self.btn_eye_forgot.isChecked() else QLineEdit.EchoMode.Password))
-        
-        pass_layout.addWidget(self.txt_new_pass); pass_layout.addWidget(self.btn_eye_forgot)
-        
-        self.btn_reset = QPushButton("✅ Xác nhận Đổi Mật Khẩu")
-        self.btn_reset.setObjectName("BtnSuccess")
-        self.btn_reset.setEnabled(False)
-        self.btn_reset.clicked.connect(self.handle_reset_password)
-
-        form_layout.addWidget(lbl_title)
-        form_layout.addWidget(QLabel("Bước 1: Lấy mã xác thực")); form_layout.addLayout(step1_layout)
-        form_layout.addSpacing(10)
-        form_layout.addWidget(QLabel("Bước 2: Xác nhận OTP")); form_layout.addWidget(self.txt_otp); form_layout.addWidget(pass_frame)
-        form_layout.addWidget(self.btn_reset)
-
-        center_layout.addWidget(frame); main_layout.addLayout(center_layout); main_layout.addStretch()
-
-    def handle_request_otp(self):
-        ident = self.txt_identifier.text().strip()
-        if not ident: return QMessageBox.warning(self, "Lỗi", "Vui lòng nhập Username!")
-        
-        success, msg = self.otp_service.request_reset_password(ident)
-        if success:
-            QMessageBox.information(self, "Thành công", msg)
-            self.txt_otp.setEnabled(True); self.txt_new_pass.setEnabled(True); self.btn_eye_forgot.setEnabled(True); self.btn_reset.setEnabled(True)
-        else:
-            QMessageBox.warning(self, "Lỗi", msg)
-
-    def handle_reset_password(self):
-        ident = self.txt_identifier.text().strip()
-        otp = self.txt_otp.text().strip()
-        new_pw = self.txt_new_pass.text().strip()
-
-        if not otp or not new_pw: return QMessageBox.warning(self, "Lỗi", "Vui lòng nhập đủ mã OTP và Mật khẩu mới!")
-
-        success, msg = self.otp_service.reset_password(ident, otp, new_pw)
-        if success:
-            QMessageBox.information(self, "Thành công", msg)
-            self.txt_identifier.clear(); self.txt_otp.clear(); self.txt_new_pass.clear()
-            self.txt_otp.setEnabled(False); self.txt_new_pass.setEnabled(False); self.btn_eye_forgot.setEnabled(False); self.btn_reset.setEnabled(False)
-            self.back_to_login_signal.emit()
-        else:
-            QMessageBox.critical(self, "Lỗi", msg)
+            QMessageBox.warning(self, "Chưa cài đặt AI", f"Hệ thống thiếu thư viện AI: {e}\nVui lòng chạy lệnh: pip install opencv-python face-recognition numpy")

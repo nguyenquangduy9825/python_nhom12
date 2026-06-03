@@ -1,7 +1,7 @@
 # bll/face_service.py
 import json
 import numpy as np
-from dal.auth_repository import AuthRepository
+from dal.auth_repositories import AuthRepository
 
 try:
     import cv2

@@ -9,9 +9,12 @@ __pycache__/
 # Bỏ qua thư mục môi trường ảo 
 venv/
 env/
+venv/
+ENV
 
 # Bỏ qua các file cấu hình riêng của VS Code
 .vscode/
+.idea/
 
 # Bỏ qua các file ảnh QR sinh ra tự động trong quá trình chạy app
-my_qr.png
+gui/assets/my_qr.png

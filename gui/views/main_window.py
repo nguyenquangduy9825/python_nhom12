@@ -23,10 +23,10 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        # Layout chính (Dọc: Trền Form, Dưới Bảng)
+        # Layout chính
         main_layout = QVBoxLayout(central_widget)
         
-        # --- PHẦN 1: FORM TÌM KIẾM ---
+        # Form tìm kiếm
         search_layout = QHBoxLayout()
         
         # Cụm Điểm đi
@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
         
         main_layout.addLayout(search_layout)
         
-        # --- PHẦN 2: BẢNG KẾT QUẢ ---
+        # Bảng hiển thị kết quả
         self.table_flights = QTableWidget()
         self.table_flights.setColumnCount(6)
         self.table_flights.setHorizontalHeaderLabels([
@@ -74,7 +74,7 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(self.table_flights)
         
-        # --- PHẦN 3: NÚT ĐẶT VÉ (Bottom) ---
+        # Nút đặt vé
         bottom_layout = QHBoxLayout()
         self.btn_book = QPushButton("Tiến Hành Đặt Vé Chuyến Đã Chọn")
         self.btn_book.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px; font-size: 14px;")
@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
         
         main_layout.addLayout(bottom_layout)
 
-    # --- CÁC HÀM XỬ LÝ SỰ KIỆN (SLOTS) ---
+    # Hàm xử lý sự kiện
     def handle_search_flights(self):
         dep = self.txt_departure.text().strip().upper()
         arr = self.txt_arrival.text().strip().upper()
